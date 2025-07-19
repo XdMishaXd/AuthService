@@ -38,7 +38,7 @@ func main() {
 
 	application.GRPCSrv.Stop()
 
-	log.Info("Application stopped")
+	log.Info("Application gracefully stopped")
 }
 
 func setupLogger(env string) *slog.Logger {

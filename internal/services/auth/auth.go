@@ -3,11 +3,12 @@ package auth
 import (
 	"SSO/internal/domain/models"
 	"SSO/internal/lib/jwt"
+	"SSO/internal/lib/logger/sl"
 	"SSO/internal/storage"
-	"errors"
-	"fmt"
 
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -71,7 +72,7 @@ func (a *Auth) Login(
 	password string,
 	appID int,
 ) (string, error) {
-	const op = "auth.login"
+	const op = "Auth.login"
 
 	log := a.log.With(
 		slog.String("op", op),
@@ -87,13 +88,13 @@ func (a *Auth) Login(
 			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 
-		a.log.Error("Failed to get user")
+		a.log.Error("Failed to get user", sl.Err(err))
 
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
-		a.log.Info("Invalid credentials")
+		a.log.Info("Invalid credentials", sl.Err(err))
 
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
@@ -107,7 +108,7 @@ func (a *Auth) Login(
 
 	token, err := jwt.NewToken(user, app, a.tokenTTL)
 	if err != nil {
-		a.log.Error("Failed to generate token")
+		a.log.Error("Failed to generate token", sl.Err(err))
 
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -132,7 +133,7 @@ func (a *Auth) RegisterNewUser(
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error("failed to generate password hash")
+		log.Error("failed to generate password hash", sl.Err(err))
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -144,7 +145,7 @@ func (a *Auth) RegisterNewUser(
 			return 0, fmt.Errorf("%s: %w", op, ErrUserExists)
 		}
 
-		log.Error("Failed to save user")
+		log.Error("Failed to save user", sl.Err(err))
 
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
